@@ -26,4 +26,16 @@ export const authorize =
     next();
   };
 
-  
+// Like `protect`, but never rejects: if a valid token is sent we attach the user, otherwise we carry on as a guest.
+export const optionalAuth = (req: Request, _res: Response, next: NextFunction) => {
+  const header = req.headers.authorization;
+  if (header && header.startsWith("Bearer ")) {
+    try {
+      const payload = verifyAccessToken(header.split(" ")[1]);
+      req.user = { id: payload.id, role: payload.role };
+    } catch {
+      /* invalid or expired token: treat as guest */
+    }
+  }
+  next();
+};

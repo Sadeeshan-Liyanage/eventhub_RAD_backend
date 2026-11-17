@@ -16,5 +16,9 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "15m",
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   // comma separated list of allowed origins
+  // chatbot (Google Gemini). The key stays on the server and is never sent to the browser.
+  geminiApiKey: process.env.GEMINI_API_KEY || "",
+  geminiModel: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
+  geminiBaseUrl: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta",
   clientUrls: (process.env.CLIENT_URL || "http://localhost:5173").split(",").map((s) => s.trim()),
 };
