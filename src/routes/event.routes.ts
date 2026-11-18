@@ -9,14 +9,13 @@ import {
   deleteEvent,
 } from "../controllers/event.controller";
 import { protect, authorize } from "../middleware/auth";
-import { validate } from "../middleware/validate";
-import { createEventSchema, updateEventSchema } from "../validators/event.validators";
+import { validate, validateQuery } from "../middleware/validate";
+import { createEventSchema, updateEventSchema, listEventsQuerySchema } from "../validators/event.validators";
 
 const router = Router();
 
-router.get("/", listEvents);
-router.get("/mine", protect, authorize("organizer"), myEvents); 
-
+router.get("/", validateQuery(listEventsQuerySchema), listEvents);
+router.get("/mine", protect, authorize("organizer"), myEvents); // must be before "/:id"
 router.get("/:id", getEvent);
 
 router.post("/", protect, authorize("organizer"), validate(createEventSchema), createEvent);

@@ -11,7 +11,7 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
   const { eventId, seatNumbers, payment } = req.body as {
     eventId: string;
     seatNumbers: number[];
-    payment: { cardHolder: string; cardNumber: string; expiry: string; cvv: string };
+    payment?: { cardHolder: string; cardNumber: string; expiry: string; cvv: string };
   };
 
   const seats = [...new Set(seatNumbers)].sort((a, b) => a - b);
@@ -23,8 +23,7 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
   if (event.date.getTime() <= Date.now()) throw new AppError(400, "This event has already started");
   if (seats.some((s) => s > event.totalSeats)) throw new AppError(400, "One or more seats do not exist");
 
-
-
+  // price every seat by the ticket type it belongs to
   const tiers = getTiers(event);
   const seatDetails = seats.map((seatNumber) => {
     const tier = tierForSeat(tiers, seatNumber)!;
@@ -32,16 +31,23 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
   });
   const totalAmount = seatDetails.reduce((sum, d) => sum + d.price, 0);
 
-
-
-  if (payment.cardNumber.endsWith("0000")) {
-    throw new AppError(402, "Payment declined. Try a different card.");
+  // --- Mock payment gateway (no real card data is stored) ---
+  // Free tickets (total 0) need no payment at all.
+  let paymentRef: string;
+  let cardLast4 = "";
+  if (totalAmount > 0) {
+    if (!payment) throw new AppError(400, "Payment details are required for paid tickets");
+    if (payment.cardNumber.endsWith("0000")) {
+      throw new AppError(402, "Payment declined. Try a different card.");
+    }
+    paymentRef = `PAY-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+    cardLast4 = payment.cardNumber.slice(-4);
+  } else {
+    paymentRef = `FREE-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
   }
-  const paymentRef = `PAY-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
 
-
-  
-
+  // Atomic reservation: succeeds only if NONE of the seats are already booked.
+  // This prevents two users booking the same seat at the same time.
   const reserved = await Event.findOneAndUpdate(
     { _id: eventId, status: "published", bookedSeats: { $nin: seats } },
     { $push: { bookedSeats: { $each: seats } } },
@@ -60,11 +66,10 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
       totalAmount,
       ticketCode: `TKT-${crypto.randomBytes(5).toString("hex").toUpperCase()}`,
       paymentRef,
-      cardLast4: payment.cardNumber.slice(-4),
+      cardLast4,
     });
   } catch (err) {
-
-
+    // the booking could not be saved, so release the seats we reserved
     await Event.updateOne({ _id: eventId }, { $pullAll: { bookedSeats: seats } });
     throw err;
   }
@@ -110,6 +115,3 @@ export const cancelBooking = asyncHandler(async (req: Request, res: Response) =>
   await Event.updateOne({ _id: booking.event }, { $pullAll: { bookedSeats: booking.seatNumbers } });
   sendSuccess(res, { booking }, 200, "Booking cancelled");
 });
-
-
-

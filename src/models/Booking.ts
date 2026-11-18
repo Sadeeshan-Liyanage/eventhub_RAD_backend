@@ -41,7 +41,7 @@ const bookingSchema = new Schema<IBooking>(
     status: { type: String, enum: ["confirmed", "cancelled"], default: "confirmed" },
     ticketCode: { type: String, required: true, unique: true },
     paymentRef: { type: String, required: true },
-    cardLast4: { type: String, required: true },
+    cardLast4: { type: String, default: "" }, // empty for free tickets
   },
   { timestamps: true }
 );
@@ -49,5 +49,3 @@ const bookingSchema = new Schema<IBooking>(
 bookingSchema.index({ event: 1, status: 1, createdAt: -1 });
 
 export const Booking = model<IBooking>("Booking", bookingSchema);
-
-

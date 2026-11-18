@@ -41,5 +41,19 @@ export const createEventSchema = base.refine((d) => d.date.getTime() > Date.now(
 
 export const updateEventSchema = base.partial();
 
+// Query-string filters for GET /api/events.
+// Every value must be a plain string/number: objects such as category[$ne]=x are rejected.
+export const listEventsQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  category: z.enum([...EVENT_CATEGORIES, "all"]).optional(),
+  minPrice: z.coerce.number().min(0).optional(),
+  maxPrice: z.coerce.number().min(0).optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  sort: z.enum(["date", "price-asc", "price-desc", "newest"]).default("date"),
+  includePast: z.enum(["true", "false"]).optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(9),
+});
 
-
+export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;

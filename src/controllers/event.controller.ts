@@ -6,23 +6,23 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { AppError } from "../utils/AppError";
 import { sendSuccess } from "../utils/response";
 import { getTiers, sameTiers } from "../utils/tiers";
+import { ListEventsQuery } from "../validators/event.validators";
 
-export const listEvents = asyncHandler(async (req: Request, res: Response) => {
-  const { q, category, minPrice, maxPrice, from, to, sort = "date", includePast } = req.query as Record<string, string>;
-  const page = Math.max(parseInt((req.query.page as string) || "1", 10), 1);
-  const limit = Math.min(Math.max(parseInt((req.query.limit as string) || "9", 10), 1), 50);
+export const listEvents = asyncHandler(async (_req: Request, res: Response) => {
+  // already validated and converted by validateQuery
+  const { q, category, minPrice, maxPrice, from, to, sort, includePast, page, limit } = res.locals.query as ListEventsQuery;
 
   const filter: QueryFilter<IEvent> = { status: "published" };
   if (includePast !== "true") filter.date = { $gte: new Date() };
   if (q) filter.$text = { $search: q };
-  if (category && category !== "all") filter.category = category as IEvent["category"];
-  if (minPrice || maxPrice) {
+  if (category && category !== "all") filter.category = category;
+  if (minPrice !== undefined || maxPrice !== undefined) {
     filter.price = {};
-    if (minPrice) filter.price.$gte = Number(minPrice);
-    if (maxPrice) filter.price.$lte = Number(maxPrice);
+    if (minPrice !== undefined) filter.price.$gte = minPrice;
+    if (maxPrice !== undefined) filter.price.$lte = maxPrice;
   }
-  if (from) filter.date = { ...(filter.date as object), $gte: new Date(from) };
-  if (to) filter.date = { ...(filter.date as object), $lte: new Date(to) };
+  if (from) filter.date = { ...(filter.date as object), $gte: from };
+  if (to) filter.date = { ...(filter.date as object), $lte: to };
 
   const sortMap: Record<string, Record<string, 1 | -1>> = {
     date: { date: 1 },
