@@ -121,4 +121,4 @@ All responses use `{ success, message?, data }` or `{ success: false, message, e
 
 ## Screenshots
 
-_Add screenshots here: home, event details with seat map, checkout, ticket, organizer dashboard._
+
