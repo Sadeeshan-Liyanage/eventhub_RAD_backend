@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { AppError } from "../utils/AppError";
 import { sendSuccess } from "../utils/response";
 import { getTiers, sameTiers } from "../utils/tiers";
+import { notifyEventCancelled } from "../services/notifications";
 import { ListEventsQuery } from "../validators/event.validators";
 
 export const listEvents = asyncHandler(async (_req: Request, res: Response) => {
@@ -84,10 +85,13 @@ export const updateEvent = asyncHandler(async (req: Request, res: Response) => {
 
 export const cancelEvent = asyncHandler(async (req: Request, res: Response) => {
   const event = await findOwnedEvent(req.params.id as string, req.user!.id);
+  // remember who was booked BEFORE their bookings are marked cancelled, so they can be told
+  const affected = await Booking.find({ event: event._id, status: "confirmed" }).select("_id");
   event.status = "cancelled";
   await event.save();
   await Booking.updateMany({ event: event._id, status: "confirmed" }, { status: "cancelled" });
   sendSuccess(res, { event }, 200, "Event cancelled and bookings marked as cancelled");
+  void notifyEventCancelled(affected.map((b) => b._id));
 });
 
 export const deleteEvent = asyncHandler(async (req: Request, res: Response) => {

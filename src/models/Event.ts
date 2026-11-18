@@ -15,15 +15,14 @@ export interface IEvent {
   category: EventCategory;
   venue: string;
   date: Date;
-  price: number; 
-  
-  totalSeats: number; 
-  
+  price: number; // lowest ticket price (derived from ticketTypes)
+  totalSeats: number; // sum of all ticket type seats (derived)
   ticketTypes: ITicketType[];
   bookedSeats: number[];
   imageUrl?: string;
   organizer: Types.ObjectId;
   status: "published" | "cancelled";
+  reminderSentAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,12 +50,12 @@ const eventSchema = new Schema<IEvent>(
     imageUrl: { type: String, trim: true },
     organizer: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     status: { type: String, enum: ["published", "cancelled"], default: "published" },
+    reminderSentAt: { type: Date },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-
-
+// keep price/totalSeats in sync with the ticket types
 eventSchema.pre("validate", function () {
   if (this.ticketTypes && this.ticketTypes.length > 0) {
     this.totalSeats = this.ticketTypes.reduce((sum, t) => sum + t.seats, 0);
@@ -65,8 +64,7 @@ eventSchema.pre("validate", function () {
 });
 
 eventSchema.virtual("availableSeats").get(function () {
-
-
+  // populated events may only contain a few fields (e.g. in bookings), so guard against missing ones
   if (this.totalSeats == null || !this.bookedSeats) return undefined;
   return this.totalSeats - this.bookedSeats.length;
 });
@@ -75,4 +73,3 @@ eventSchema.index({ title: "text", description: "text", venue: "text" });
 eventSchema.index({ date: 1, category: 1 });
 
 export const Event = model<IEvent>("Event", eventSchema);
-

@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "tsx src/seed.ts",
-    "repair": "tsx src/repair.ts"
+    "repair": "tsx src/repair.ts",
+    "email:test": "tsx src/emailTest.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -19,6 +20,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.4",
     "morgan": "^1.12.1",
+    "nodemailer": "^10.6.0",
+    "qrcode": "^1.5.4",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -27,6 +30,8 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.6.5",
+    "@types/nodemailer": "^8.0.2",
+    "@types/qrcode": "^1.5.6",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { AppError } from "../utils/AppError";
 import { sendSuccess } from "../utils/response";
 import { getTiers, tierForSeat } from "../utils/tiers";
+import { notifyBookingCancelled, notifyBookingConfirmed, notifyEventSoldOut } from "../services/notifications";
 
 export const createBooking = asyncHandler(async (req: Request, res: Response) => {
   const { eventId, seatNumbers, payment } = req.body as {
@@ -76,6 +77,10 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
 
   const populated = await booking.populate("event", "title date venue imageUrl category");
   sendSuccess(res, { booking: populated }, 201, "Booking confirmed");
+
+  // emails go out in the background so the user is never kept waiting
+  void notifyBookingConfirmed(booking._id);
+  if (reserved.bookedSeats.length >= reserved.totalSeats) void notifyEventSoldOut(event._id);
 });
 
 export const myBookings = asyncHandler(async (req: Request, res: Response) => {
@@ -114,4 +119,5 @@ export const cancelBooking = asyncHandler(async (req: Request, res: Response) =>
   await booking.save();
   await Event.updateOne({ _id: booking.event }, { $pullAll: { bookedSeats: booking.seatNumbers } });
   sendSuccess(res, { booking }, 200, "Booking cancelled");
+  void notifyBookingCancelled(booking._id);
 });
