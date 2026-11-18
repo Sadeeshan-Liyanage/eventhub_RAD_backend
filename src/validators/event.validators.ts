@@ -41,8 +41,8 @@ export const createEventSchema = base.refine((d) => d.date.getTime() > Date.now(
 
 export const updateEventSchema = base.partial();
 
-// Query-string filters for GET /api/events.
-// Every value must be a plain string/number: objects such as category[$ne]=x are rejected.
+
+
 export const listEventsQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
   category: z.enum([...EVENT_CATEGORIES, "all"]).optional(),
@@ -57,3 +57,5 @@ export const listEventsQuerySchema = z.object({
 });
 
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
+
+

@@ -7,9 +7,8 @@ import { AppError } from "../utils/AppError";
 import { sendSuccess } from "../utils/response";
 import { getTiers } from "../utils/tiers";
 
-// GET /api/analytics/overview  (organizer only)
-// One query loads the organizer's confirmed bookings; all numbers are derived from it.
-// (For a very large system you would use MongoDB aggregation pipelines instead.)
+
+
 export const overview = asyncHandler(async (req: Request, res: Response) => {
   const events = await Event.find({ organizer: req.user!.id });
   const eventIds = events.map((e) => e._id as Types.ObjectId);
@@ -18,7 +17,8 @@ export const overview = asyncHandler(async (req: Request, res: Response) => {
     .select("event user createdAt totalAmount quantity")
     .lean();
 
-  // totals
+
+    
   let revenue = 0;
   let ticketsSold = 0;
   const participants = new Set<string>();
@@ -34,7 +34,8 @@ export const overview = asyncHandler(async (req: Request, res: Response) => {
     perEventStats.set(key, row);
   }
 
-  // per event (with a breakdown for each ticket type)
+  
+
   const perEvent = events.map((e) => {
     const stats = perEventStats.get(e._id.toString());
     const sold = e.bookedSeats.length;
@@ -61,7 +62,8 @@ export const overview = asyncHandler(async (req: Request, res: Response) => {
     };
   });
 
-  // last 30 days by calendar day (UTC); days with no sales stay at zero so the chart line is continuous
+  
+
   const since = new Date();
   since.setDate(since.getDate() - 29);
   since.setHours(0, 0, 0, 0);
@@ -101,7 +103,8 @@ export const overview = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-// GET /api/analytics/events/:id/participants  (organizer who owns the event)
+
+
 export const participants = asyncHandler(async (req: Request, res: Response) => {
   const event = await Event.findById(req.params.id);
   if (!event) throw new AppError(404, "Event not found");
@@ -112,7 +115,16 @@ export const participants = asyncHandler(async (req: Request, res: Response) => 
     .sort({ createdAt: -1 });
 
   sendSuccess(res, {
-    event: { id: event._id, title: event.title, capacity: event.totalSeats, sold: event.bookedSeats.length },
+    event: {
+      id: event._id,
+      title: event.title,
+      date: event.date,
+      capacity: event.totalSeats,
+      sold: event.bookedSeats.length,
+     
+      
+      checkedIn: bookings.filter((b) => b.checkedInAt).reduce((sum, b) => sum + b.quantity, 0),
+    },
     participants: bookings.map((b) => ({
       bookingId: b._id,
       name: (b.user as any).name,
@@ -123,7 +135,10 @@ export const participants = asyncHandler(async (req: Request, res: Response) => 
         : b.seatNumbers.map(String),
       amount: b.totalAmount,
       ticketCode: b.ticketCode,
+      quantity: b.quantity,
+      checkedInAt: b.checkedInAt ?? null,
       bookedAt: b.createdAt,
     })),
   });
 });
+

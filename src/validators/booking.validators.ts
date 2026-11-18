@@ -6,8 +6,8 @@ export const createBookingSchema = z.object({
     .array(z.coerce.number().int().min(1))
     .min(1, "Select at least one seat")
     .max(8, "You can book up to 8 seats at a time"),
-  // not needed when the total is 0 (free tickets); the controller checks it for paid tickets
-  payment: z
+
+    payment: z
     .object({
     cardHolder: z.string().trim().min(2, "Card holder name is required"),
     cardNumber: z

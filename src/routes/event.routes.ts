@@ -15,7 +15,8 @@ import { createEventSchema, updateEventSchema, listEventsQuerySchema } from "../
 const router = Router();
 
 router.get("/", validateQuery(listEventsQuerySchema), listEvents);
-router.get("/mine", protect, authorize("organizer"), myEvents); // must be before "/:id"
+router.get("/mine", protect, authorize("organizer"), myEvents); 
+
 router.get("/:id", getEvent);
 
 router.post("/", protect, authorize("organizer"), validate(createEventSchema), createEvent);

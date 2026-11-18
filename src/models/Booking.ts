@@ -17,6 +17,8 @@ export interface IBooking {
   ticketCode: string;
   paymentRef: string;
   cardLast4: string;
+  checkedInAt?: Date;
+  checkedInBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,7 +43,10 @@ const bookingSchema = new Schema<IBooking>(
     status: { type: String, enum: ["confirmed", "cancelled"], default: "confirmed" },
     ticketCode: { type: String, required: true, unique: true },
     paymentRef: { type: String, required: true },
-    cardLast4: { type: String, default: "" }, // empty for free tickets
+    cardLast4: { type: String, default: "" },
+    
+    checkedInAt: { type: Date },
+    checkedInBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
